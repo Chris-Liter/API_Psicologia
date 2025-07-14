@@ -150,33 +150,61 @@ def prediccionIndividual():
         return jsonify({"error": str(e)}), 500
 
 
-def generar_frases_scraping(texto, etiqueta):
-    prompt = f"""
-Dado el siguiente texto escrito por un usuario y su clasificación emocional ({etiqueta}), extrae exactamente 2 frases muy cortas o expresiones frecuentes que reflejen el sentimiento del texto. Luego, combina cada una con una palabra clave relacionada a la clasificación emocional proporcionada para que las frases finales sean útiles para buscar publicaciones similares en redes sociales (web scraping).
-
-El resultado debe tener 2 frases cortas faciles de buscar en redes sociales separadas por el símbolo " || ". Usa frases reales, naturales y emocionales, como las que se publican normalmente en redes sociales. No inventes datos nuevos, solo transforma el contenido del texto original según la clasificación. Sé directo y concreto.
-
-Texto: {texto}
-Clasificación emocional: {etiqueta}
-
-Devuélveme solo la línea final así:
-frase1 || frase2
-    """
-
+@app.route("/frasesParaScrapping", methods=["POST"])
+def generar_frases_scraping_desde_json():
     try:
-        respuesta = client.chat.completions.create(
+        data = request.get_json()
+
+        respuestas_json = data.get("respuestas", [])
+
+        # Filtrar respuestas relevantes
+        respuestas_filtradas = [
+            (item['respuesta'], item['etiqueta'])
+            for item in respuestas_json
+            if item['etiqueta'] in ['Depresión', 'Ansiedad']
+        ]
+
+        if not respuestas_filtradas:
+            return jsonify({"error": "No hay respuestas con etiquetas válidas para generar frases."}), 400
+
+        # Construir el prompt
+        prompt = """
+A continuación, te doy varias respuestas escritas por un usuario, cada una con su respectiva clasificación emocional obtenida mediante un modelo BERT (las posibles etiquetas son: Depresión, Ansiedad u Otro).
+
+Tu tarea es:
+
+1. Analizar el contenido de todas las respuestas y sus clasificaciones asociadas.
+2. Identificar las palabras o frases más frecuentes, significativas o emocionalmente representativas por cada etiqueta (Depresión o Ansiedad).
+3. Generar exactamente dos expresiones útiles para búsquedas en redes sociales, con el siguiente formato:
+   ➤ [Etiqueta] [palabra_representativa]
+
+Por ejemplo:  
+Depresión vacío || Ansiedad miedo
+
+(No uses expresiones con la etiqueta "Otro", ignora esas respuestas)
+
+Devuelve solo una línea con 2 expresiones separadas por el símbolo `||`.
+---
+"""
+
+        for i, (respuesta, etiqueta) in enumerate(respuestas_filtradas, start=1):
+            prompt += f"{i}. Respuesta: {respuesta}\nClasificación: {etiqueta}\n"
+
+        prompt += "\nDevuelve solo esto:\nEtiqueta palabra1 || Etiqueta palabra2"
+
+        # Llamada a OpenAI
+        completion = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
+            messages=[{"role": "user", "content": prompt}],
             temperature=1,
             max_tokens=100
         )
-        return respuesta.choices[0].message.content.strip()
+
+        resultado = completion.choices[0].message.content.strip()
+        return jsonify({"frases": resultado})
+
     except Exception as e:
-        return f"No se pudieron generar frases: {str(e)}"
-
-
+        return jsonify({"error": str(e)}), 500
 
 
 
@@ -216,29 +244,6 @@ Da una explicación breve, clara y profesional para un usuario que podría estar
 def home():
     return "API de clasificación de textos con BERT + explicación de ChatGPT lista."
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    try:
-        data = request.get_json()
-        print(f"Datos recibidos: {data}")
-        if not data or "texto" not in data:
-            return jsonify({"error": "Debes enviar un campo 'texto' en JSON."}), 400
-
-        texto = data["texto"]
-        print(f"Texto recibido: {texto}")
-        resultado = predecir(texto)
-        explicacion = generar_explicacion_chatgpt(resultado["etiqueta"], texto)
-        print(f"Resultado de la predicción: {resultado}")
-        return jsonify({
-            "resultado": resultado,
-            "descripcion": LABEL_DESC[resultado["etiqueta"]],
-            "explicacion_chatgpt": explicacion
-        })
-    except Exception as e:
-        print(f"Error en la predicción: {str(e)}")
-        return jsonify({"error": "Ocurrió un error al procesar la solicitud."}), 500
-
-
 
 @app.route("/frases", methods=["POST"])
 def obtener_frases_scraping():
@@ -250,7 +255,7 @@ def obtener_frases_scraping():
         texto = data["texto"]
         #resultado = "Depresión"
         resultado = predecir(texto)
-        frases = generar_frases_scraping(texto, resultado["etiqueta"])
+        frases = generar_frases_scraping_desde_json(texto, resultado["etiqueta"])
 
         return jsonify({
             "frases_scraping": frases,
