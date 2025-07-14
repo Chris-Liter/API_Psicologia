@@ -32,6 +32,8 @@ model.eval()
 # === Flask App ===
 app = Flask(__name__)
 CORS(app)  
+
+
 def predecir(texto):
     inputs = tokenizer(texto, truncation=True, padding=True, max_length=128, return_tensors="pt")
     inputs = {k: v.to(device) for k, v in inputs.items()}
@@ -42,15 +44,110 @@ def predecir(texto):
         probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()[0]
         pred = np.argmax(probs)
 
-    return {
+    return jsonify({
         "etiqueta": ID2LABEL[pred],
         "confianza": round(float(probs[pred]), 4)
-    }
+    })
+
+
+
+@app.route("/palabrasClave", methods=["POST"])
+def extraer_palabras_clave():
+    try:
+        data = request.get_json()
+        print("JSON recibido en /palabrasClave:", data)
+
+        respuestas = data.get("respuestas", [])
+
+        if not respuestas or not isinstance(respuestas, list):
+            return jsonify({"error": "Se esperaba una lista de respuestas"}), 400
+
+        respuestas_concatenadas = " ".join(respuestas)
+        if not respuestas_concatenadas.strip():
+            return jsonify({"error": "Las respuestas están vacías"}), 400
+
+        prompt = f"""
+Analiza este conjunto de textos escritos por un usuario en contexto emocional.
+
+Extrae exactamente 2 palabras clave **reales y frecuentes** que se repiten o reflejan el estado emocional del usuario. No agregues explicaciones. No inventes palabras. Solo devuelve las dos palabras más repetidas o emocionalmente fuertes, separadas por coma.
+
+Texto del usuario:
+{respuestas_concatenadas}
+
+Formato de salida:
+palabra1, palabra2
+"""
+
+        resultado = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages= [
+                 {"role": "user", "content": prompt},
+                # {
+                #     "role": "user",
+                #     "content": user_message
+                # }
+            ],
+            
+            temperature=1,
+            max_completion_tokens=230,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+
+        contenido = resultado.choices[0].message.content.strip()
+        print("Respuesta GPT:", contenido)
+
+        if "," not in contenido:
+            return jsonify({"error": "La respuesta del modelo no está en el formato esperado"}), 500
+
+        palabra1, palabra2 = map(str.strip, contenido.split(",", 1))
+
+        return jsonify({
+            "palabra1": palabra1,
+            "palabra2": palabra2
+        })
+
+    except Exception as e:
+        print("Error interno en /palabrasClave:", str(e))
+        return jsonify({"error": f"No se pudieron extraer palabras clave: {str(e)}"}), 500
 
 
 
 
+@app.route("/prediccionIndividual", methods=["POST"])
+def prediccionIndividual():
+    try:
+        data = request.get_json()
 
+        if not data or "texto" not in data:
+            return jsonify({"error": "No se proporcionó texto válido"}), 400
+
+        texto = data["texto"]
+        print(texto)
+
+        if not texto.strip():
+            return jsonify({"error": "Texto vacío"}), 400
+
+        inputs = tokenizer(text=texto, truncation=True, padding=True, max_length=128, return_tensors="pt")
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+            logits = outputs.logits
+            probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()[0]
+            pred = np.argmax(probs)
+
+        print(f'etiqueta: {ID2LABEL[pred]}, confianza: {round(float(probs[pred]), 4)}')
+        return jsonify({
+            "etiqueta": ID2LABEL[pred],
+            "confianza": round(float(probs[pred]), 4)
+        })
+        
+
+    except Exception as e:
+        print("Error en prediccionIndividual:", e)
+        return jsonify({"error": str(e)}), 500
 
 
 def generar_frases_scraping(texto, etiqueta):
