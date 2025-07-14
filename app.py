@@ -157,6 +157,7 @@ def generar_frases_scraping_desde_json():
 
         respuestas_json = data.get("respuestas", [])
 
+        print("Respuestas recibidas:", respuestas_json)
         # Filtrar respuestas relevantes
         respuestas_filtradas = [
             (item['respuesta'], item['etiqueta'])
@@ -197,7 +198,7 @@ Devuelve solo una línea con 2 expresiones separadas por el símbolo `||`.
             model="gpt-4o-mini-2024-07-18",
             messages=[{"role": "user", "content": prompt}],
             temperature=1,
-            max_tokens=100
+            max_tokens=1000
         )
 
         resultado = completion.choices[0].message.content.strip()
