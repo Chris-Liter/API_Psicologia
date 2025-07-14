@@ -9,7 +9,7 @@ import os
 from flask_cors import CORS
 
 
-client = OpenAI( api_key='')
+client = OpenAI( api_key='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')
 
 
 # === Configuración ===
@@ -46,6 +46,42 @@ def predecir(texto):
         "etiqueta": ID2LABEL[pred],
         "confianza": round(float(probs[pred]), 4)
     }
+
+
+
+
+
+
+
+def generar_frases_scraping(texto, etiqueta):
+    prompt = f"""
+Dado el siguiente texto escrito por un usuario y su clasificación emocional ({etiqueta}), extrae exactamente 2 frases muy cortas o expresiones frecuentes que reflejen el sentimiento del texto. Luego, combina cada una con una palabra clave relacionada a la clasificación emocional proporcionada para que las frases finales sean útiles para buscar publicaciones similares en redes sociales (web scraping).
+
+El resultado debe tener 2 frases cortas faciles de buscar en redes sociales separadas por el símbolo " || ". Usa frases reales, naturales y emocionales, como las que se publican normalmente en redes sociales. No inventes datos nuevos, solo transforma el contenido del texto original según la clasificación. Sé directo y concreto.
+
+Texto: {texto}
+Clasificación emocional: {etiqueta}
+
+Devuélveme solo la línea final así:
+frase1 || frase2
+    """
+
+    try:
+        respuesta = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=1,
+            max_tokens=100
+        )
+        return respuesta.choices[0].message.content.strip()
+    except Exception as e:
+        return f"No se pudieron generar frases: {str(e)}"
+
+
+
+
 
 def generar_explicacion_chatgpt(etiqueta, texto):
     prompt = f"""
@@ -104,6 +140,32 @@ def predict():
     except Exception as e:
         print(f"Error en la predicción: {str(e)}")
         return jsonify({"error": "Ocurrió un error al procesar la solicitud."}), 500
+
+
+
+@app.route("/frases", methods=["POST"])
+def obtener_frases_scraping():
+    try:
+        data = request.get_json()
+        if not data or "texto" not in data:
+            return jsonify({"error": "Debes enviar un campo 'texto' en JSON."}), 400
+
+        texto = data["texto"]
+        #resultado = "Depresión"
+        resultado = predecir(texto)
+        frases = generar_frases_scraping(texto, resultado["etiqueta"])
+
+        return jsonify({
+            "frases_scraping": frases,
+            "etiqueta": resultado["etiqueta"],
+            "descripcion": LABEL_DESC[resultado["etiqueta"]]
+        })
+    except Exception as e:
+        return jsonify({"error": f"Ocurrió un error: {str(e)}"}), 500
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
