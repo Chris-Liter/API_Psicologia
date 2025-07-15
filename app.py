@@ -279,12 +279,15 @@ def obtener_frases_scraping():
 def analizar_caso_psicologico():
     try:
         data = request.get_json()
+        #print("Datos recibidos en /analizar-caso:", data)
         red_social = data.get("redSocial")
+        #print("Red social seleccionada:", red_social)
         frases_raw = data.get("palabrasScraping", "")
+        print("Frases de scraping recibidas:", frases_raw)
         respuestas_usuario = data.get("respuestasUsuario", [])
-        
+        print("Respuestas del usuario recibidas:", respuestas_usuario)
         ciudad = data.get("ciudad", "Cuenca")  # Valor por defecto si no se envía
-
+        print("Ciudad recibida:", ciudad)
         # Guardar ciudad en archivo para el scraper
         with open("ciudad_scraping.txt", "w", encoding="utf-8") as f:
             f.write(ciudad)
@@ -298,8 +301,8 @@ def analizar_caso_psicologico():
 
         # === Paso 1: Ejecutar el scraping solo si es Facebook ===
                 # === Paso 1: Ejecutar el scraping según red social ===
-        if red_social.lower() == "facebook":
-            print("🚀 Ejecutando scraping de Facebook...")
+        if red_social['redsocial'].lower() == "facebook":
+            print(" Ejecutando scraping de Facebook...")
 
             # Guardar frases en archivo para el scraper
             with open("frases_scraping.json", "w", encoding="utf-8") as f:
@@ -313,17 +316,27 @@ def analizar_caso_psicologico():
             with open("comentariosFacebookMultiprocesoFinal.json", "r", encoding="utf-8") as f:
                 contenido_scraping = json.load(f)
 
-        elif red_social.lower() == "reddit":
-            return jsonify({
-                "error": "Scraping para Reddit aún no está implementado. En construcción."
-            }), 501
+        elif red_social['redsocial'].lower() == "reddit":
+            print(" Ejecutando scraping de Reddit")
 
-        elif red_social.lower() == "tiktok":
+            # Guardar frases en archivo para el scraper
+            with open("frases_scraping.json", "w", encoding="utf-8") as f:
+                json.dump(frases, f)
+
+            subprocess.run([sys.executable, "appReddit.py"])
+
+            if not os.path.exists("comentariosRedditMultiprocesoFinal.json"):
+                return jsonify({"error": "No se encontró el archivo de resultados del scraping"}), 500
+
+            with open("comentariosRedditMultiprocesoFinal.json", "r", encoding="utf-8") as f:
+                contenido_scraping = json.load(f)
+
+        elif red_social['redsocial'].lower() == "tiktok":
             return jsonify({
                 "error": "Scraping para TikTok aún no está implementado. En construcción."
             }), 501
 
-        elif red_social.lower() == "youtube":
+        elif red_social['redsocial'].lower() == "youtube":
             return jsonify({
                 "error": "Scraping para YouTube aún no está implementado. En construcción."
             }), 501
@@ -405,7 +418,22 @@ Repite: devuelve **solo** el JSON, sin comillas externas ni código formateado.
         if match:
             try:
                 datos = json.loads(match.group())
-                return jsonify(datos)
+
+                ciudad_archivo = None
+                if ciudad.lower() == 'cuenca':
+                    ciudad_archivo = f"personasFacebookCiudadCuenca.json"
+                elif ciudad.lower() == 'guayaquil':
+                    ciudad_archivo = f"personasFacebookCiudadGuayaquil.json"
+                elif ciudad.lower() == 'quito':
+                    ciudad_archivo = f"personasFacebookCiudadQuito.json"
+
+                psicologos = []
+
+                if os.path.exists(ciudad_archivo):
+                    with open(ciudad_archivo, "r", encoding="utf-8") as f:
+                        psicologos = json.load(f)
+
+                return jsonify({**datos, "psicologos": psicologos})
             except json.JSONDecodeError as e:
                 return jsonify({"error": f"JSON inválido: {str(e)}", "respuesta_bruta": analisis}), 500
         else:
@@ -413,6 +441,7 @@ Repite: devuelve **solo** el JSON, sin comillas externas ni código formateado.
 
 
     except Exception as e:
+        print("Error en /analizar-caso:", str(e))
         return jsonify({"error": str(e)}), 500
 
 
