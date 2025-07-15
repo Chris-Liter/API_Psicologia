@@ -7,6 +7,10 @@ import openai
 from openai import OpenAI
 import os
 from flask_cors import CORS
+import subprocess
+from playwright.sync_api import sync_playwright
+import sys
+import json
 
 
 client = OpenAI( api_key='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')
@@ -267,6 +271,149 @@ def obtener_frases_scraping():
         return jsonify({"error": f"Ocurrió un error: {str(e)}"}), 500
 
 
+
+
+
+
+@app.route('/analizar-caso', methods=['POST'])
+def analizar_caso_psicologico():
+    try:
+        data = request.get_json()
+        red_social = data.get("redSocial")
+        frases_raw = data.get("palabrasScraping", "")
+        respuestas_usuario = data.get("respuestasUsuario", [])
+        
+        ciudad = data.get("ciudad", "Cuenca")  # Valor por defecto si no se envía
+
+        # Guardar ciudad en archivo para el scraper
+        with open("ciudad_scraping.txt", "w", encoding="utf-8") as f:
+            f.write(ciudad)
+
+
+
+        if not red_social or not frases_raw or not respuestas_usuario:
+            return jsonify({"error": "Faltan campos obligatorios en la solicitud"}), 400
+
+        frases = [f.strip() for f in frases_raw.split("||")]
+
+        # === Paso 1: Ejecutar el scraping solo si es Facebook ===
+                # === Paso 1: Ejecutar el scraping según red social ===
+        if red_social.lower() == "facebook":
+            print("🚀 Ejecutando scraping de Facebook...")
+
+            # Guardar frases en archivo para el scraper
+            with open("frases_scraping.json", "w", encoding="utf-8") as f:
+                json.dump(frases, f)
+
+            subprocess.run([sys.executable, "scraper_facebook.py"])
+
+            if not os.path.exists("comentariosFacebookMultiprocesoFinal.json"):
+                return jsonify({"error": "No se encontró el archivo de resultados del scraping"}), 500
+
+            with open("comentariosFacebookMultiprocesoFinal.json", "r", encoding="utf-8") as f:
+                contenido_scraping = json.load(f)
+
+        elif red_social.lower() == "reddit":
+            return jsonify({
+                "error": "Scraping para Reddit aún no está implementado. En construcción."
+            }), 501
+
+        elif red_social.lower() == "tiktok":
+            return jsonify({
+                "error": "Scraping para TikTok aún no está implementado. En construcción."
+            }), 501
+
+        elif red_social.lower() == "youtube":
+            return jsonify({
+                "error": "Scraping para YouTube aún no está implementado. En construcción."
+            }), 501
+
+        else:
+            return jsonify({
+                "error": f"Red social '{red_social}' no reconocida. Usa: Facebook, Reddit, TikTok o YouTube."
+            }), 400
+
+
+        # === Paso 2: Construir el prompt ===
+        prompt = """
+Actúa como un psicólogo profesional. A continuación se presentan las respuestas de un paciente a un formulario de evaluación emocional, donde cada respuesta ya ha sido clasificada por un modelo BERT como Depresión, Ansiedad u Otro.
+
+También se han extraído comentarios reales de redes sociales (Facebook) relacionados con las emociones del paciente.
+
+Tu tarea es:
+
+1. Analizar en conjunto las respuestas del paciente, sus etiquetas y los comentarios de redes sociales.
+2. Generar un análisis general del estado emocional del paciente en base a las respuestas del paciente.
+3. Proporcionar una recomendación o reflexión positiva que ayude al usuario a comprender mejor su situación y sepa cómo manejarla emocionalmente.
+
+--- RESPUESTAS DEL PACIENTE ---
+"""
+
+        for i, item in enumerate(respuestas_usuario, start=1):
+            respuesta = item.get("respuesta", "")
+            etiqueta = item.get("etiqueta", "")
+            prompt += f"{i}. {respuesta}  (Clasificación: {etiqueta})\n"
+
+        prompt += "\n--- COMENTARIOS EXTRAÍDOS DE FACEBOOK ---\n"
+        for publicacion in contenido_scraping[:5]:  # solo los 5 primeros para simplificar el análisis
+            prompt += f"- {publicacion['titulo']}\n"
+            for comentario in publicacion.get("comentarios", [])[:3]:
+                prompt += f"  • {comentario}\n"
+
+        prompt += """
+--- INSTRUCCIONES DE RESPUESTA ---
+
+Actúa como un psicólogo profesional. Debes analizar las respuestas del usuario a un formulario emocional, cada una etiquetada como Depresión, Ansiedad u Otro. También se han extraído comentarios de redes sociales (Facebook) usando frases relacionadas con lo que siente el usuario. Estas frases no provienen del usuario, sino del análisis de patrones emocionales que otras personas expresan en línea.
+
+Tu tarea es generar una respuesta estructurada con los siguientes tres elementos:
+
+1. Un análisis emocional detallado basado en las respuestas del usuario.
+2. Un análisis general de los comentarios obtenidos desde redes sociales, explicando qué emociones y temas son comunes en personas que usan frases similares.
+3. Una recomendación o mensaje positivo redactado de forma profesional y empática, como lo haría un psicólogo.
+
+🔴 Devuelve exclusivamente un objeto JSON válido, sin formato Markdown, sin etiquetas como ```json, sin comas sobrantes, sin explicaciones antes o después.
+
+🔴 La estructura debe ser exactamente así (sin ningún carácter adicional):
+
+{
+  "analisis_emocional": "Texto extenso (mínimo 5 a 6 líneas).",
+  "comentarios_sociales": "Texto extenso (mínimo 5 a 6 líneas).",
+  "recomendacion_positiva": "Texto extenso (mínimo 5 a 6 líneas)."
+}
+
+Repite: devuelve **solo** el JSON, sin comillas externas ni código formateado.
+"""
+
+        # === Paso 3: Enviar a ChatGPT ===
+        respuesta = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=2000
+        )
+
+        ##analisis = respuesta.choices[0].message.content.strip()
+        ##datos = json.loads(analisis)
+
+        import re
+
+        analisis = respuesta.choices[0].message.content.strip()
+
+        # Intentar extraer el bloque JSON usando expresión regular
+        match = re.search(r'\{.*\}', analisis, re.DOTALL)
+
+        if match:
+            try:
+                datos = json.loads(match.group())
+                return jsonify(datos)
+            except json.JSONDecodeError as e:
+                return jsonify({"error": f"JSON inválido: {str(e)}", "respuesta_bruta": analisis}), 500
+        else:
+            return jsonify({"error": "No se pudo encontrar un bloque JSON en la respuesta", "respuesta_bruta": analisis}), 500
+
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 

@@ -1,0 +1,40 @@
+{
+  "analisis": "{\n  \"analisis_emocional\": \"El paciente presenta un estado emocional complejo, marcado por síntomas de depresión y ansiedad. Las respuestas indican una profunda tristeza y pensamientos autodestructivos, lo que sugiere un nivel significativo de angustia. Además, el cansancio y la ansiedad reflejan una lucha constante con el estrés emocional. La manifestación de miedo y el deseo de encerrarse denotan un posible aislamiento social y dificultad para afrontar situaciones cotidianas. Esto puede indicar que el paciente se siente abrumado por sus emociones y la sensación de vacío que menciona en sus comentarios en redes sociales.\",\n  \"comentarios_sociales\": \"Los comentarios extraídos de las redes sociales del paciente muestran una búsqueda de apoyo y comprensión. Muchos amigos ofrecen palabras de aliento y están dispuestos a ayudar, lo que sugiere que el paciente está rodeado de personas que se preocupan por él. Sin embargo, también se percibe un sentimiento de lucha interna y una necesidad de ser escuchado, así como un reconocimiento de la dificultad de lidiar con la depresión. Existe un deseo de conectar con otros y compartir sus experiencias, lo cual es un paso importante para buscar apoyo.\",\n  \"recomendacion_positiva\": \"Es fundamental que reconozcas que estás atravesando un momento difícil y que está bien pedir ayuda. La tristeza y la ansiedad son emociones que muchas personas experimentan, y no estás solo en esto. Intenta dar un paso a la vez y busca las pequeñas cosas que te traen alegría o paz. Hablar con amigos o familiares sobre tus sentimientos puede aliviar parte de la carga que llevas. Recuerda que cada día es una oportunidad para sanar y encontrar un camino hacia el bienestar emocional.\"\n}",
+  "redSocial": "Facebook",
+  "frasesScraping": [
+    "Depresión triste",
+    "Ansiedad cansado"
+  ],
+  "respuestasUsuario": [
+    {
+      "confianza": 0.9502,
+      "etiqueta": "Depresión",
+      "pregunta": "¿Cómo te has sentido en los últimos días?",
+      "respuesta": "me siento muy triste"
+    },
+    {
+      "confianza": 0.9985,
+      "etiqueta": "Ansiedad",
+      "pregunta": "¿Te sientes constantemente cansado o con poca energía?",
+      "respuesta": "bastante cansado con ansiedad"
+    },
+    {
+      "confianza": 0.9993,
+      "etiqueta": "Depresión",
+      "pregunta": "¿Cuáles son tus pensamientos en estos momentos?",
+      "respuesta": "me quiero matar, por la tristeza a perder"
+    },
+    {
+      "confianza": 0.9996,
+      "etiqueta": "Otro",
+      "pregunta": "¿Tu rendimiento académico, cómo se encuentra?",
+      "respuesta": "tengo miedo de perder el ciclo"
+    },
+    {
+      "confianza": 0.9969,
+      "etiqueta": "Otro",
+      "pregunta": "¿Has pensado en autolesionarte a ti mismo/a?",
+      "respuesta": "a veces tengo ganas de llorar y me quiero encerrar"
+    }
+  ]
+}
