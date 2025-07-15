@@ -337,10 +337,19 @@ def analizar_caso_psicologico():
             }), 501
 
         elif red_social['redsocial'].lower() == "youtube":
-            return jsonify({
-                "error": "Scraping para YouTube aún no está implementado. En construcción."
-            }), 501
+            print(" Ejecutando api de Youtube")
 
+            # Guardar frases en archivo para el scraper
+            with open("frases_scraping.json", "w", encoding="utf-8") as f:
+                json.dump(frases, f)
+
+            subprocess.run([sys.executable, "appYoutube.py"])
+
+            if not os.path.exists("comentariosYoutubeMultiprocesoFinal.json"):
+                return jsonify({"error": "No se encontró el archivo de resultados del scraping"}), 500
+
+            with open("comentariosYoutubeMultiprocesoFinal.json", "r", encoding="utf-8") as f:
+                contenido_scraping = json.load(f)
         else:
             return jsonify({
                 "error": f"Red social '{red_social}' no reconocida. Usa: Facebook, Reddit, TikTok o YouTube."
