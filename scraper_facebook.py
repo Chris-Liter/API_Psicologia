@@ -190,10 +190,160 @@ def scrape_personas_por_ciudad(frase_busqueda, ciudad, queue):
         queue.put(resultados)
 
 
+
+def scrape_usuario_especifico(username, queue):
+    publicaciones = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            context = browser.new_context(storage_state="estado_facebook.json")
+            page = context.new_page()
+
+            url_perfil = f"https://www.facebook.com/{username}"
+            page.goto(url_perfil)
+            time.sleep(6)
+
+            # Scroll hacia abajo dos veces para cargar más publicaciones
+            for _ in range(2):
+                page.mouse.wheel(0, 2500)
+                time.sleep(2)
+
+            # Volver al inicio
+            page.evaluate("window.scrollTo(0, 0)")
+            time.sleep(2)
+
+            posts = page.query_selector_all('div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z')
+            print(f"📌 Encontradas {len(posts)} publicaciones")
+            vistos = set()
+
+            for idx, post in enumerate(posts):
+                try:
+                    if not post.is_visible():
+                        continue
+
+                    post_html = post.inner_html()
+                    if post_html in vistos:
+                        continue
+                    vistos.add(post_html)
+
+                    # Scroll al post completo por si no es visible aún
+                    try:
+                        post.scroll_into_view_if_needed()
+                        time.sleep(1)
+                    except:
+                        pass
+
+                    # Buscar botón de comentarios
+                    boton_comentar = post.query_selector('div[role="button"][aria-label*="comentario"]')
+                    if not boton_comentar:
+                        print(f"⏩ Publicación {idx + 1} sin botón comentar visible, se omite.")
+                        continue
+
+                    if not boton_comentar.is_visible():
+                        print(f"⏩ Botón comentar no visible en publicación {idx + 1}, se omite.")
+                        continue
+
+                    try:
+                        boton_comentar.evaluate("el => el.click()")
+                        time.sleep(3)
+                        print(f"✅ Comentarios abiertos en publicación {idx + 1}")
+
+                        # 🟡 Scroll en el panel de comentarios específico
+                        try:
+                            page.evaluate("""
+                                () => {
+                                    const panel = document.querySelector('div.xb57i2i.x1q594ok.x5lxg6s.x78zum5.xdt5ytf.x6ikm8r.x1ja2u2z.x1pq812k.x1rohswg.xfk6m8.x1yqm8si.xjx87ck.xx8ngbg.xwo3gff.x1n2onr6.x1oyok0e.x1odjw0f.x1iyjqo2.xy5w88m');
+                                    if (panel) {
+                                        panel.scrollBy(0, 2000);
+                                    }
+                                }
+                            """)
+                            print("🔄 Scroll realizado en el panel de comentarios")
+                            time.sleep(3)  # Esperar a que se carguen nuevos comentarios
+                        except Exception as e:
+                            print(f"⚠️ No se pudo hacer scroll: {e}")
+
+
+                    except Exception as e:
+                        print(f"⚠️ Error al hacer clic en comentario de publicación {idx + 1}: {e}")
+                        continue
+
+
+                    
+                    # 🟦 Título (después del clic)
+                    titulo = "Sin contenido"
+                    try:
+                        texto_div = post.query_selector('div[dir="auto"][style*="text-align: start;"]')
+                        if texto_div:
+                            titulo = texto_div.inner_text().strip()
+                            if not titulo:
+                                span = texto_div.query_selector('span')
+                                if span:
+                                    titulo = span.inner_text().strip()
+                    except:
+                        pass
+
+                    # 🟦 Comentarios
+                    comentarios_extraidos = []
+
+                    # 1. Buscar todos los contenedores de comentarios
+                    bloques_comentarios = page.query_selector_all('div.x78zum5.xdt5ytf[data-virtualized="false"]')
+
+
+                    for bloque in bloques_comentarios:
+                        try:
+                            # 2. Dentro de cada uno, buscar el texto real del comentario
+                            comentario_contenedor = bloque.query_selector('div.xdj266r.x14z9mp.xat24cr.x1lziwak.x1vvkbs')
+                            if comentario_contenedor:
+                                texto_div = comentario_contenedor.query_selector('div[dir="auto"][style*="text-align: start;"]')
+                                if texto_div:
+                                    texto = texto_div.inner_text().strip()
+                                    if not texto:
+                                        span = texto_div.query_selector('span')
+                                        if span:
+                                            texto = span.inner_text().strip()
+                                    if texto and texto != titulo and texto not in comentarios_extraidos:
+                                        comentarios_extraidos.append(texto)
+                        except Exception as e:
+                            print(f"⚠️ Error extrayendo un comentario: {e}")
+                            continue
+
+                    publicaciones.append({
+                        "usuario": username,
+                        "titulo": titulo,
+                        "comentarios": comentarios_extraidos
+                    })
+
+                    # Salir del comentario
+                    page.keyboard.press("Escape")
+                    time.sleep(2)
+
+                except Exception as e:
+                    print(f"❌ Error al procesar publicación {idx + 1}: {e}")
+                    continue
+
+            context.close()
+            browser.close()
+            print(f"✅ Scraping terminado para usuario: {username}")
+
+    except Exception as e:
+        print(f"❌ Error general scraping usuario: {e}")
+
+    finally:
+        queue.put(publicaciones)
+
+
+
+
+
+
+
+
 def run_parallel_scraping():
     q1 = Queue()
     q2 = Queue()
     q3 = ThreadQueue()
+    q4 = ThreadQueue()
 
     # Leer las frases desde archivo generado por app.py
     if os.path.exists("frases_scraping.json"):
@@ -210,13 +360,23 @@ def run_parallel_scraping():
     else:
         ciudad = "Cuenca"
 
+    
+    # Lee usuario objetivo desde archivo
+    if os.path.exists("usuario_scraping.txt"):
+        with open("usuario_scraping.txt", "r", encoding="utf-8") as f:
+            usuario_objetivo = f.read().strip()
+    else:
+        usuario_objetivo = "zuck"  # Por defecto, Mark Zuckerberg
+
     p1 = Process(target=scrape_facebook, args=(frases[0], q1))
     p2 = Process(target=scrape_facebook, args=(frases[1], q2))
     t3 = Thread(target=scrape_personas_por_ciudad, args=("Psicologos", ciudad, q3))
+    t4 = Thread(target=scrape_usuario_especifico, args=(usuario_objetivo, q4))
 
     p1.start()
     p2.start()
     t3.start()
+    t4.start()
 
     p1.join()
     print("▶️ p1.join() completado")
@@ -224,17 +384,21 @@ def run_parallel_scraping():
     print("▶️ p2.join() completado")
     t3.join()
     print("▶️ t3.join() completado")
+    t4.join()
+    print("▶️ t4.join() completado")
 
     print(f"⚙️ Proceso 1 terminó con exit code: {p1.exitcode}")
     print(f"⚙️ Proceso 2 terminó con exit code: {p2.exitcode}")
 
     resultados = []
     personas = []
+    publicaciones_usuario = []
 
     try:
         resultados += q1.get(timeout=30)
         resultados += q2.get(timeout=30)
         personas += q3.get(timeout=30)
+        publicaciones_usuario += q4.get(timeout=30)
     except Exception as e:
         print("⚠️ Error al obtener resultados:", e)
 
@@ -243,10 +407,14 @@ def run_parallel_scraping():
 
     with open("personasFacebookCiudad.json", "w", encoding="utf-8") as f:
         json.dump(personas, f, indent=2, ensure_ascii=False)
+    
+    with open("publicacionesUsuario.json", "w", encoding="utf-8") as f:
+        json.dump(publicaciones_usuario, f, indent=2, ensure_ascii=False)
 
     print("✅ Archivos guardados correctamente.")
     import sys
     sys.exit(0)
+
 
 
 if __name__ == "__main__":

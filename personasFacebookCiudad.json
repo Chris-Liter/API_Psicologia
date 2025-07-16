@@ -1,1 +1,290 @@
-[]
+[
+  {
+    "nombre": "Diego Loja",
+    "perfil": "https://www.facebook.com/profile.php?id=61577833096068",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Amigos",
+    "perfil": "https://www.facebook.com/friends/",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Bienvenida",
+    "perfil": "https://www.facebook.com/?sk=welcome",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Recuerdos",
+    "perfil": "https://www.facebook.com/onthisday/?source=bookmark",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Guardado",
+    "perfil": "https://www.facebook.com/saved/?cref=28",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Grupos",
+    "perfil": "https://www.facebook.com/groups/?ref=bookmarks",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Reels",
+    "perfil": "https://www.facebook.com/watch/",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Marketplace",
+    "perfil": "https://www.facebook.com/marketplace/?ref=bookmark",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Feeds",
+    "perfil": "https://www.facebook.com/?filter=all&sk=h_chr",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Eventos",
+    "perfil": "https://www.facebook.com/events?source=46&action_history=null",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=61577833096068",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicóloga.",
+    "perfil": "https://www.facebook.com/psicologafavoritaonline?__cft__[0]=AZUQLtyi2Aqx9PTb5hIeFO-U5Pwxl92b2-TMAarsYXmpNxc4n-Ig72itCXQVaxpTHoLR9oXxnwDhI8yJEGBFCDG0bk4ZKOvX3f6IP96BYYzCJyG50l3RsaWbyIVhZEqRXtyfyVgW669IGDq9F2fpSZLnnZbjB3ge1ekFlGaj6BIizTWI4coIOt6EpXwvxsdRj3BgEMtfyrz5by7WQvQotQyi&__tn__=-UC%2CP-R",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=100009379607396&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicología Laboral",
+    "perfil": "https://www.facebook.com/profile.php?id=100009379607396",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/ifpsicologos.asociados?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "IF Psicologos Asociados",
+    "perfil": "https://www.facebook.com/ifpsicologos.asociados",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=100009514597732&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicologos Ecuador",
+    "perfil": "https://www.facebook.com/profile.php?id=100009514597732",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=61552020779012&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogos Unidos",
+    "perfil": "https://www.facebook.com/profile.php?id=61552020779012",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=100087948520113&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogos Ulveda (Centro de Capacitación y Atención Psicopedagógica)",
+    "perfil": "https://www.facebook.com/profile.php?id=100087948520113",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologia.yuyay.7?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogos Yuyay",
+    "perfil": "https://www.facebook.com/psicologia.yuyay.7",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/terapiaspsicologicasenquito?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Salomé Zapata (Psicólogos y terapeutas)",
+    "perfil": "https://www.facebook.com/terapiaspsicologicasenquito",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologos.adomicilio.1?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicologos A Domicilio",
+    "perfil": "https://www.facebook.com/psicologos.adomicilio.1",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=100094085139073&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "PsicólogosRed CuentaConmigo",
+    "perfil": "https://www.facebook.com/profile.php?id=100094085139073",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/jeffer.santander.9?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicologo Del Amor Xavier Santander (las aventuras fortalecen)",
+    "perfil": "https://www.facebook.com/jeffer.santander.9",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologo.clinico.79?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogo Clínico",
+    "perfil": "https://www.facebook.com/psicologo.clinico.79",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologoclinico.carlosrojas?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogo Clínico Carlos Rojas",
+    "perfil": "https://www.facebook.com/psicologoclinico.carlosrojas",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologo.clinico.961?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicologo Clinico",
+    "perfil": "https://www.facebook.com/psicologo.clinico.961",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/Psicoanalista.Henry.Socasi?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogo-Psicoanalista Henry Socasi",
+    "perfil": "https://www.facebook.com/Psicoanalista.Henry.Socasi",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=100012426422227&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogo Clínico Quito Diego Maldonado",
+    "perfil": "https://www.facebook.com/profile.php?id=100012426422227",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/profile.php?id=100000205332433&__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicologo Andres Trujillo",
+    "perfil": "https://www.facebook.com/profile.php?id=100000205332433",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologo.infantil.14?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogo Infantil",
+    "perfil": "https://www.facebook.com/psicologo.infantil.14",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "",
+    "perfil": "https://www.facebook.com/psicologocarlos.rodriguez?__tn__=%3C",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  },
+  {
+    "nombre": "Psicólogo Carlos Rodriguez",
+    "perfil": "https://www.facebook.com/psicologocarlos.rodriguez",
+    "frase": "Psicologos",
+    "ciudad": "Quito"
+  }
+]
