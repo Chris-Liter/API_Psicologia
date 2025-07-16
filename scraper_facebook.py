@@ -185,7 +185,7 @@ def scrape_personas_por_ciudad(frase_busqueda, ciudad, queue):
             print(f"✅ Scraping de personas terminado para ciudad: {ciudad}")
 
     except Exception as e:
-        print(f"❌ Error general en scraping de personas por ciudad: {e}")
+        print(f" Error general en scraping de personas por ciudad: {e}")
     finally:
         queue.put(resultados)
 
@@ -213,7 +213,7 @@ def scrape_usuario_especifico(username, queue):
             time.sleep(2)
 
             posts = page.query_selector_all('div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z')
-            print(f"📌 Encontradas {len(posts)} publicaciones")
+            print(f" Encontradas {len(posts)} publicaciones")
             vistos = set()
 
             for idx, post in enumerate(posts):
@@ -248,7 +248,7 @@ def scrape_usuario_especifico(username, queue):
                         time.sleep(3)
                         print(f"✅ Comentarios abiertos en publicación {idx + 1}")
 
-                        # 🟡 Scroll en el panel de comentarios específico
+                        #  Scroll en el panel de comentarios específico
                         try:
                             page.evaluate("""
                                 () => {
@@ -270,7 +270,7 @@ def scrape_usuario_especifico(username, queue):
 
 
                     
-                    # 🟦 Título (después del clic)
+                    #  Título (después del clic)
                     titulo = "Sin contenido"
                     try:
                         texto_div = post.query_selector('div[dir="auto"][style*="text-align: start;"]')
@@ -283,7 +283,7 @@ def scrape_usuario_especifico(username, queue):
                     except:
                         pass
 
-                    # 🟦 Comentarios
+                    #  Comentarios
                     comentarios_extraidos = []
 
                     # 1. Buscar todos los contenedores de comentarios
@@ -327,7 +327,7 @@ def scrape_usuario_especifico(username, queue):
             print(f"✅ Scraping terminado para usuario: {username}")
 
     except Exception as e:
-        print(f"❌ Error general scraping usuario: {e}")
+        print(f" Error general scraping usuario: {e}")
 
     finally:
         queue.put(publicaciones)
@@ -350,7 +350,7 @@ def run_parallel_scraping():
         with open("frases_scraping.json", "r", encoding="utf-8") as f:
             frases = json.load(f)
     else:
-        print("❌ No se encontró frases_scraping.json")
+        print(" No se encontró frases_scraping.json")
         frases = ["placeholder 1", "placeholder 2"]
 
     # Leer ciudad desde archivo externo generado por el backend
@@ -379,16 +379,16 @@ def run_parallel_scraping():
     t4.start()
 
     p1.join()
-    print("▶️ p1.join() completado")
+    print("▶ p1.join() completado")
     p2.join()
-    print("▶️ p2.join() completado")
+    print("▶ p2.join() completado")
     t3.join()
-    print("▶️ t3.join() completado")
+    print("▶ t3.join() completado")
     t4.join()
-    print("▶️ t4.join() completado")
+    print("▶ t4.join() completado")
 
-    print(f"⚙️ Proceso 1 terminó con exit code: {p1.exitcode}")
-    print(f"⚙️ Proceso 2 terminó con exit code: {p2.exitcode}")
+    print(f" Proceso 1 terminó con exit code: {p1.exitcode}")
+    print(f" Proceso 2 terminó con exit code: {p2.exitcode}")
 
     resultados = []
     personas = []
@@ -400,7 +400,7 @@ def run_parallel_scraping():
         personas += q3.get(timeout=30)
         publicaciones_usuario += q4.get(timeout=30)
     except Exception as e:
-        print("⚠️ Error al obtener resultados:", e)
+        print(" Error al obtener resultados:", e)
 
     with open("comentariosFacebookMultiprocesoFinal.json", "w", encoding="utf-8") as f:
         json.dump(resultados, f, indent=2, ensure_ascii=False)

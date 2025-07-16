@@ -309,10 +309,17 @@ def analizar_caso_psicologico():
         print("Respuestas del usuario recibidas:", respuestas_usuario)
         ciudad = data.get("ciudad", "Cuenca")  # Valor por defecto si no se envía
         print("Ciudad recibida:", ciudad)
+
+        usuario = data.get("usuario", "")
+        edad = data.get("edad", "")
+        genero = data.get("genero", "")
+
         # Guardar ciudad en archivo para el scraper
         with open("ciudad_scraping.txt", "w", encoding="utf-8") as f:
             f.write(ciudad)
 
+        with open("usuario_scraping.txt", "w", encoding="utf-8") as f:
+            f.write(usuario)
 
 
         if not red_social or not frases_raw or not respuestas_usuario:
@@ -322,7 +329,7 @@ def analizar_caso_psicologico():
 
         # === Paso 1: Ejecutar el scraping solo si es Facebook ===
                 # === Paso 1: Ejecutar el scraping según red social ===
-        if red_social['redsocial'].lower() == "facebook":
+        if red_social.lower() == "facebook":
             print(" Ejecutando scraping de Facebook...")
 
             # Guardar frases en archivo para el scraper
@@ -336,8 +343,16 @@ def analizar_caso_psicologico():
 
             with open("comentariosFacebookMultiprocesoFinal.json", "r", encoding="utf-8") as f:
                 contenido_scraping = json.load(f)
+                # Cargar comentarios generales por frases similares
+                comentarios_generales = []
+                archivo_generales = "comentariosFacebookMultiprocesoFinal.json"
+                if os.path.exists(archivo_generales):
+                    with open(archivo_generales, "r", encoding="utf-8") as f:
+                        comentarios_generales = json.load(f)
 
-        elif red_social['redsocial'].lower() == "reddit":
+
+
+        elif red_social.lower() == "reddit":
             print(" Ejecutando scraping de Reddit")
 
             # Guardar frases en archivo para el scraper
@@ -352,12 +367,12 @@ def analizar_caso_psicologico():
             with open("comentariosRedditMultiprocesoFinal.json", "r", encoding="utf-8") as f:
                 contenido_scraping = json.load(f)
 
-        elif red_social['redsocial'].lower() == "tiktok":
+        elif red_social.lower() == "tiktok":
             return jsonify({
                 "error": "Scraping para TikTok aún no está implementado. En construcción."
             }), 501
 
-        elif red_social['redsocial'].lower() == "youtube":
+        elif red_social.lower() == "youtube":
             print(" Ejecutando api de Youtube")
 
             # Guardar frases en archivo para el scraper
@@ -378,54 +393,69 @@ def analizar_caso_psicologico():
 
 
         # === Paso 2: Construir el prompt ===
-        prompt = """
-Actúa como un psicólogo profesional. A continuación se presentan las respuestas de un paciente a un formulario de evaluación emocional, donde cada respuesta ya ha sido clasificada por un modelo BERT como Depresión, Ansiedad u Otro.
+        prompt = f"""
+        Actúa como un psicólogo profesional con experiencia en análisis emocional y salud mental. A continuación se presentan los datos de un paciente para evaluación:
 
-También se han extraído comentarios reales de redes sociales (Facebook) relacionados con las emociones del paciente.
+        📌 Datos personales:
+        - Nombre de usuario: {data.get('usuario', 'Usuario Desconocido')}
+        - Edad: {data.get('edad', 'No especificada')}
+        - Género: {data.get('genero', 'No especificado')}
+        - Ciudad: {ciudad}
 
-Tu tarea es:
+        📌 Contexto:
+        Este usuario respondió a un formulario emocional con preguntas previamente etiquetadas por un modelo BERT (clasificadas en: Depresión, Ansiedad u Otro). Ademas se tiene su edad y su genero esto debe estar en el análisis. También se han extraído:
+        - Publicaciones recientes de su perfil (a través de scraping personalizado).
+        - Publicaciones de otras personas con frases similares (web scraping basado en emociones clave).
 
-1. Analizar en conjunto las respuestas del paciente, sus etiquetas y los comentarios de redes sociales.
-2. Generar un análisis general del estado emocional del paciente en base a las respuestas del paciente.
-3. Proporcionar una recomendación o reflexión positiva que ayude al usuario a comprender mejor su situación y sepa cómo manejarla emocionalmente.
+        Tu tarea es realizar un **análisis psicológico completo**, estructurado en tres partes.
 
---- RESPUESTAS DEL PACIENTE ---
-"""
+        --- RESPUESTAS DEL FORMULARIO ---
+        """
 
         for i, item in enumerate(respuestas_usuario, start=1):
+            pregunta = item.get("pregunta", "")
             respuesta = item.get("respuesta", "")
             etiqueta = item.get("etiqueta", "")
-            prompt += f"{i}. {respuesta}  (Clasificación: {etiqueta})\n"
+            confianza = item.get("confianza", "")
+            prompt += f"{i}. {pregunta}\n   → Respuesta: \"{respuesta}\"  (Clasificación: {etiqueta}, Confianza: {confianza})\n"
 
-        prompt += "\n--- COMENTARIOS EXTRAÍDOS DE FACEBOOK ---\n"
-        for publicacion in contenido_scraping[:5]:  # solo los 5 primeros para simplificar el análisis
+        prompt += "\n--- PUBLICACIONES DEL PERFIL DEL USUARIO ---\n"
+        for publicacion in contenido_scraping[:5]:
             prompt += f"- {publicacion['titulo']}\n"
             for comentario in publicacion.get("comentarios", [])[:3]:
                 prompt += f"  • {comentario}\n"
 
         prompt += """
---- INSTRUCCIONES DE RESPUESTA ---
+        --- PUBLICACIONES DE OTRAS PERSONAS CON FRASES SIMILARES ---
+        Estas publicaciones fueron extraídas automáticamente usando las frases ingresadas por el usuario. Sirven como referencia sobre cómo otras personas expresan emociones similares en redes sociales.
+        """
 
-Actúa como un psicólogo profesional. Debes analizar las respuestas del usuario a un formulario emocional, cada una etiquetada como Depresión, Ansiedad u Otro. También se han extraído comentarios de redes sociales (Facebook) usando frases relacionadas con lo que siente el usuario. Estas frases no provienen del usuario, sino del análisis de patrones emocionales que otras personas expresan en línea.
+        for i, post in enumerate(comentarios_generales[:3], start=1):
+            titulo = post.get('titulo', 'Sin título')
+            prompt += f"\n{i}. {titulo}"
+            for comentario in post.get("comentarios", [])[:3]:
+                prompt += f"\n   • {comentario}"
 
-Tu tarea es generar una respuesta estructurada con los siguientes tres elementos:
+        prompt += """
+        --- INSTRUCCIONES DE RESPUESTA ---
 
-1. Un análisis emocional detallado basado en las respuestas del usuario.
-2. Un análisis general de los comentarios obtenidos desde redes sociales, explicando qué emociones y temas son comunes en personas que usan frases similares.
-3. Una recomendación o mensaje positivo redactado de forma profesional y empática, como lo haría un psicólogo.
+        1. Analiza detalladamente el estado emocional del usuario con base en las respuestas al formulario y de sus datos personales edad, genero.
+        2. Realiza un análisis psicológico de las publicaciones recientes del usuario en redes sociales solo del usuario.
+        3. Considerando también los patrones emocionales encontrados en otros usuarios (scraping externo), realiza una comparación o análisis contextual.
+        4. Finalmente, redacta una conclusión profesional y sugiere una posible línea de tratamiento o acompañamiento psicológico adaptada al perfil del usuario.
 
-🔴 Devuelve exclusivamente un objeto JSON válido, sin formato Markdown, sin etiquetas como ```json, sin comas sobrantes, sin explicaciones antes o después.
+        🔴 Devuelve **únicamente** un objeto JSON válido, sin comillas externas ni formato Markdown. Sin explicaciones adicionales.
 
-🔴 La estructura debe ser exactamente así (sin ningún carácter adicional):
+        Estructura esperada (no añadir ningún carácter adicional):
 
-{
-  "analisis_emocional": "Texto extenso (mínimo 5 a 6 líneas).",
-  "comentarios_sociales": "Texto extenso (mínimo 5 a 6 líneas).",
-  "recomendacion_positiva": "Texto extenso (mínimo 5 a 6 líneas)."
-}
+        {
+        "analisis_formulario": "Texto extenso (mínimo 5 a 6 líneas).",
+        "analisis_redes_usuario": "Texto extenso (mínimo 5 a 6 líneas).",
+        "analisis_comparativo_social": "Texto extenso (mínimo 5 a 6 líneas).",
+        "conclusion_y_tratamiento": "Texto extenso (mínimo 5 a 6 líneas)."
+        }
+        """
 
-Repite: devuelve **solo** el JSON, sin comillas externas ni código formateado.
-"""
 
         # === Paso 3: Enviar a ChatGPT ===
         respuesta = client.chat.completions.create(
