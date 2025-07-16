@@ -1,6 +1,4 @@
 from flask import Flask, request, jsonify
-from transformers import BertForSequenceClassification, BertTokenizer
-import torch
 import numpy as np
 
 import openai
@@ -25,13 +23,13 @@ LABEL_DESC = {
 }
 
 # Cargar modelo BERT
-model_path = "modelo_bert_depresion"
-model = BertForSequenceClassification.from_pretrained(model_path)
-tokenizer = BertTokenizer.from_pretrained(model_path)
+# model_path = "modelo_bert_depresion"
+# model = BertForSequenceClassification.from_pretrained(model_path)
+# tokenizer = BertTokenizer.from_pretrained(model_path)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-model.eval()
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model.to(device)
+# model.eval()
 
 # === Flask App ===
 app = Flask(__name__)
@@ -39,14 +37,14 @@ CORS(app)
 
 
 def predecir(texto):
-    inputs = tokenizer(texto, truncation=True, padding=True, max_length=128, return_tensors="pt")
-    inputs = {k: v.to(device) for k, v in inputs.items()}
+    # inputs = tokenizer(texto, truncation=True, padding=True, max_length=128, return_tensors="pt")
+    # inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    with torch.no_grad():
-        outputs = model(**inputs)
-        logits = outputs.logits
-        probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()[0]
-        pred = np.argmax(probs)
+    # with torch.no_grad():
+    #     outputs = model(**inputs)
+    #     logits = outputs.logits
+    #     probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()[0]
+    #     pred = np.argmax(probs)
 
     return jsonify({
         "etiqueta": ID2LABEL[pred],
@@ -119,40 +117,63 @@ palabra1, palabra2
 
 
 
+
+
 @app.route("/prediccionIndividual", methods=["POST"])
 def prediccionIndividual():
     try:
+
         data = request.get_json()
+        prompt = """
+        
+        Eres un psicólogo clínico con experiencia en evaluación de salud mental. 
+        Analizas respuestas abiertas sobre el estado emocional de una persona para estimar un nivel aproximado de depresión y ansiedad, 
+        expresado en porcentaje de severidad. Basas tu análisis en criterios de los instrumentos DASS-21, GAD-7 y BDI-II. Sé empático y objetivo en tu análisis.
+        Las preguntas son estas ¿Cómo describirías tu estado de ánimo en los últimos días?
 
-        if not data or "texto" not in data:
-            return jsonify({"error": "No se proporcionó texto válido"}), 400
+        * ¿Qué cosas te han hecho sentir preocupado, triste o estresado últimamente?
 
-        texto = data["texto"]
-        print(texto)
+        * ¿Has tenido dificultades para dormir o para descansar bien? ¿Por qué crees que sucede eso?
 
-        if not texto.strip():
-            return jsonify({"error": "Texto vacío"}), 400
+        * ¿Hay algo que antes disfrutabas y que ahora ya no te interesa o no te provoca hacerlo?
 
-        inputs = tokenizer(text=texto, truncation=True, padding=True, max_length=128, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        * ¿Cómo te sientes contigo mismo/a en este momento?
 
-        with torch.no_grad():
-            outputs = model(**inputs)
-            logits = outputs.logits
-            probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()[0]
-            pred = np.argmax(probs)
+        * ¿Qué piensas o haces cuando te sientes muy mal emocionalmente?
+        de las cuales, puede venir en cualquier orden con una respuesta, y por este caso lo primordial es la respuesta que debes devolver
+        Te enviare cada pregunta y respuesta del usuario, una por una, por lo que debes responder con una etiqueta de depresión o ansiedad,
+        y un porcentaje de confianza en tu respuesta, sin explicaciones adicionales asi: etiqueta || porcentaje, aqui va:"""
 
-        print(f'etiqueta: {ID2LABEL[pred]}, confianza: {round(float(probs[pred]), 4)}')
+        prompt += f"\nPregunta: {data['pregunta']}\nRespuesta: {data['respuesta']}\n"
+
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=1,
+            max_tokens=1000
+        )
+
+        resultado = completion.choices[0].message.content.strip()
+        #print(f'etiqueta: {ID2LABEL[pred]}, confianza: {round(float(probs[pred]), 4)}')
+        if "||" not in resultado:
+            raise ValueError("Formato inesperado en la respuesta del modelo: " + resultado)
+
+        etiqueta, porcentaje_str = [x.strip().lower() for x in resultado.split("||")]
+
+        porcentaje_str = porcentaje_str.replace("%", "").strip()
+        porcentaje = float(porcentaje_str)
+        confianza = round(porcentaje / 100, 4)
+
         return jsonify({
-            "etiqueta": ID2LABEL[pred],
-            "confianza": round(float(probs[pred]), 4)
+            "etiqueta": etiqueta,
+            "confianza": confianza
         })
         
 
     except Exception as e:
         print("Error en prediccionIndividual:", e)
         return jsonify({"error": str(e)}), 500
-
+        
 
 @app.route("/frasesParaScrapping", methods=["POST"])
 def generar_frases_scraping_desde_json():
@@ -166,7 +187,7 @@ def generar_frases_scraping_desde_json():
         respuestas_filtradas = [
             (item['respuesta'], item['etiqueta'])
             for item in respuestas_json
-            if item['etiqueta'] in ['Depresión', 'Ansiedad']
+            if item['etiqueta'] in ['depresión', 'ansiedad']
         ]
 
         if not respuestas_filtradas:
