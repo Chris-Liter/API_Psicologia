@@ -66,7 +66,7 @@ def scrape_youtube(frase, queue):
             q=frase,
             part="snippet",
             type="video",
-            maxResults=2
+            maxResults=9
         ).execute()
 
         for item in search_response.get("items", []):
@@ -92,7 +92,7 @@ def scrape_youtube(frase, queue):
                     comentarios_limpios.append(limpio)
 
             except Exception as e:
-                print(f"⚠️ Error al obtener comentarios de {video_id}: {e}")
+                print(f"Error al obtener comentarios de {video_id}: {e}")
 
             if comentarios_limpios:
                 resultados.append({

@@ -329,7 +329,10 @@ def analizar_caso_psicologico():
 
         # === Paso 1: Ejecutar el scraping solo si es Facebook ===
                 # === Paso 1: Ejecutar el scraping según red social ===
-        if red_social.lower() == "facebook":
+
+        print("Red Social:",red_social)
+
+        if red_social['redsocial'].lower() == "facebook":
             print(" Ejecutando scraping de Facebook...")
 
             # Guardar frases en archivo para el scraper
@@ -352,7 +355,7 @@ def analizar_caso_psicologico():
 
 
 
-        elif red_social.lower() == "reddit":
+        elif red_social['redsocial'].lower() == "reddit":
             print(" Ejecutando scraping de Reddit")
 
             # Guardar frases en archivo para el scraper
@@ -366,13 +369,35 @@ def analizar_caso_psicologico():
 
             with open("comentariosRedditMultiprocesoFinal.json", "r", encoding="utf-8") as f:
                 contenido_scraping = json.load(f)
+                # Cargar comentarios generales por frases similares
+                comentarios_generales = []
+                archivo_generales = "comentariosFacebookMultiprocesoFinal.json"
+                if os.path.exists(archivo_generales):
+                    with open(archivo_generales, "r", encoding="utf-8") as f:
+                        comentarios_generales = json.load(f)
 
-        elif red_social.lower() == "tiktok":
-            return jsonify({
-                "error": "Scraping para TikTok aún no está implementado. En construcción."
-            }), 501
+        elif red_social['redsocial'].lower() == "tiktok":
+            print(" Ejecutando api de tiktok")
 
-        elif red_social.lower() == "youtube":
+            # Guardar frases en archivo para el scraper
+            with open("frases_scraping.json", "w", encoding="utf-8") as f:
+                json.dump(frases, f)
+
+            subprocess.run([sys.executable, "appTitktok.py"])
+
+            if not os.path.exists("comentariosTiktokMultiprocesoFinal.json"):
+                return jsonify({"error": "No se encontró el archivo de resultados del scraping"}), 500
+
+            with open("comentariosTiktokMultiprocesoFinal.json", "r", encoding="utf-8") as f:
+                contenido_scraping = json.load(f)
+                # Cargar comentarios generales por frases similares
+                comentarios_generales = []
+                archivo_generales = "comentariosTiktokMultiprocesoFinal.json"
+                if os.path.exists(archivo_generales):
+                    with open(archivo_generales, "r", encoding="utf-8") as f:
+                        comentarios_generales = json.load(f)
+
+        elif red_social['redsocial'].lower() == "youtube":
             print(" Ejecutando api de Youtube")
 
             # Guardar frases en archivo para el scraper
@@ -386,6 +411,13 @@ def analizar_caso_psicologico():
 
             with open("comentariosYoutubeMultiprocesoFinal.json", "r", encoding="utf-8") as f:
                 contenido_scraping = json.load(f)
+                # Cargar comentarios generales por frases similares
+                comentarios_generales = []
+                archivo_generales = "comentariosFacebookMultiprocesoFinal.json"
+                if os.path.exists(archivo_generales):
+                    with open(archivo_generales, "r", encoding="utf-8") as f:
+                        comentarios_generales = json.load(f)
+
         else:
             return jsonify({
                 "error": f"Red social '{red_social}' no reconocida. Usa: Facebook, Reddit, TikTok o YouTube."
