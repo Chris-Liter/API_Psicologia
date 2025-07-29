@@ -292,6 +292,7 @@ def obtener_frases_scraping():
         return jsonify({"error": f"Ocurrió un error: {str(e)}"}), 500
 
 
+import re  
 
 
 
@@ -488,6 +489,53 @@ def analizar_caso_psicologico():
         }
         """
 
+        # === Paso 2.5: Analizar cada comentario individualmente ===
+        comentarios_analizados = []
+
+        for publicacion in contenido_scraping[:10]:  # puedes ajustar el límite si hay muchas publicaciones
+            titulo = publicacion.get("titulo", "Sin título")
+            for comentario in publicacion.get("comentarios", [])[:5]:  # ajustar si hay muchos comentarios
+                prompt_comentario = f"""
+        Actúa como un psicólogo con enfoque analítico. A continuación te presento un comentario de una red social. Tu tarea es analizar brevemente su contenido emocional y psicológico. Si percibes señales de emociones fuertes como tristeza, ansiedad, ira o pensamientos negativos, descríbelas. Si no hay señales relevantes, indica que es un comentario neutral.
+
+        Comentario:
+        \"{comentario}\"
+
+        Responde en este formato JSON:
+        {{
+            "comentario": "{comentario}",
+            "analisis": "Texto con análisis emocional o nota neutral."
+        }}
+        """
+                try:
+                    respuesta_individual = client.chat.completions.create(
+                        model="gpt-4o-mini-2024-07-18",
+                        messages=[{"role": "user", "content": prompt_comentario}],
+                        temperature=0.5,
+                        max_tokens=300
+                    )
+
+                    analisis_comentario = respuesta_individual.choices[0].message.content.strip()
+
+                    # Extraer el bloque JSON
+                    match = re.search(r'\{.*\}', analisis_comentario, re.DOTALL)
+                    if match:
+                        data_comentario = json.loads(match.group())
+                        comentarios_analizados.append(data_comentario)
+                    else:
+                        comentarios_analizados.append({
+                            "comentario": comentario,
+                            "analisis": "No se pudo analizar el comentario."
+                        })
+
+                except Exception as e:
+                    print(f"Error analizando comentario: {comentario} - {str(e)}")
+                    comentarios_analizados.append({
+                        "comentario": comentario,
+                        "analisis": f"Error durante el análisis: {str(e)}"
+                    })
+
+
 
         # === Paso 3: Enviar a ChatGPT ===
         respuesta = client.chat.completions.create(
@@ -500,7 +548,7 @@ def analizar_caso_psicologico():
         ##analisis = respuesta.choices[0].message.content.strip()
         ##datos = json.loads(analisis)
 
-        import re
+        #import re
 
         analisis = respuesta.choices[0].message.content.strip()
 
@@ -525,7 +573,8 @@ def analizar_caso_psicologico():
                     with open(ciudad_archivo, "r", encoding="utf-8") as f:
                         psicologos = json.load(f)
 
-                return jsonify({**datos, "psicologos": psicologos})
+                return jsonify({**datos, "psicologos": psicologos, "comentarios_analizados": comentarios_analizados})
+
             except json.JSONDecodeError as e:
                 return jsonify({"error": f"JSON inválido: {str(e)}", "respuesta_bruta": analisis}), 500
         else:
