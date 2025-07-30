@@ -204,7 +204,7 @@ def scrape_usuario_especifico(username, queue):
             time.sleep(6)
 
             # Scroll hacia abajo dos veces para cargar más publicaciones
-            for _ in range(2):
+            for _ in range(3):
                 page.mouse.wheel(0, 2500)
                 time.sleep(2)
 

@@ -9,6 +9,7 @@ import subprocess
 from playwright.sync_api import sync_playwright
 import sys
 import json
+import time
 
 
 client = OpenAI( api_key='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')
@@ -331,6 +332,9 @@ def analizar_caso_psicologico():
         # === Paso 1: Ejecutar el scraping solo si es Facebook ===
                 # === Paso 1: Ejecutar el scraping según red social ===
 
+        #INICIO DE TIEMPO PARA SCRAPING CALCULO
+        scraping_start = time.time()
+
         print("Red Social:",red_social)
 
         if red_social['redsocial'].lower() == "facebook":
@@ -425,7 +429,17 @@ def analizar_caso_psicologico():
             }), 400
 
 
+        #FINAL DE TIEMPO DEL SCRAPING PARALELO
+        scraping_end = time.time()
+        scraping_time = scraping_end - scraping_start
+        print(f"⏱ Tiempo de scraping: {scraping_time:.2f} segundos")
+
+
         # === Paso 2: Construir el prompt ===
+        ##INICIO DE TIEMPO DE CHATGPT
+        chatgpt_start = time.time()
+
+
         prompt = f"""
         Actúa como un psicólogo profesional con experiencia en análisis emocional y salud mental. A continuación se presentan los datos de un paciente para evaluación:
 
@@ -537,13 +551,86 @@ def analizar_caso_psicologico():
 
 
 
+
+
+
+                # === Paso 2.6: Analizar títulos de publicaciones del usuario ===
+        publicaciones_analizadas = []
+        try:
+            if os.path.exists("publicacionesUsuario.json"):
+                with open("publicacionesUsuario.json", "r", encoding="utf-8") as f:
+                    publicaciones_usuario = json.load(f)
+
+                for pub in publicaciones_usuario[:10]:  # limitar a 10 títulos para no saturar
+                    titulo = pub.get("titulo", "Sin título")
+
+                    prompt_publicacion = f"""
+Actúa como un psicólogo con enfoque analítico. A continuación te presento un título de una publicación de una red social del usuario.
+Tu tarea es analizar brevemente su contenido emocional y psicológico. Si percibes emociones como tristeza, ansiedad, orgullo, felicidad, ira o motivación, descríbelas.
+Si el título es neutral o informativo, indícalo también.
+
+Título:
+\"{titulo}\"
+
+Responde en este formato JSON:
+{{
+    "titulo": "{titulo}",
+    "analisis": "Texto con análisis emocional o nota neutral."
+}}
+"""
+
+                    try:
+                        respuesta_pub = client.chat.completions.create(
+                            model="gpt-4o-mini-2024-07-18",
+                            messages=[{"role": "user", "content": prompt_publicacion}],
+                            temperature=0.5,
+                            max_tokens=1000
+                        )
+
+                        analisis_pub = respuesta_pub.choices[0].message.content.strip()
+
+                        # Extraer el JSON de la respuesta de GPT
+                        match = re.search(r'\{.*\}', analisis_pub, re.DOTALL)
+                        if match:
+                            data_pub = json.loads(match.group())
+                            publicaciones_analizadas.append(data_pub)
+                        else:
+                            publicaciones_analizadas.append({
+                                "titulo": titulo,
+                                "analisis": "No se pudo analizar el título."
+                            })
+
+                    except Exception as e:
+                        print(f"Error analizando título: {titulo} - {str(e)}")
+                        publicaciones_analizadas.append({
+                            "titulo": titulo,
+                            "analisis": f"Error durante el análisis: {str(e)}"
+                        })
+        except Exception as e:
+            print(f"Error cargando publicaciones del usuario: {str(e)}")
+
+
+
+
+
+
+
+
+
+
+
         # === Paso 3: Enviar a ChatGPT ===
         respuesta = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=3000
         )
+
+        chatgpt_end = time.time()
+        chatgpt_time = chatgpt_end - chatgpt_start
+        print(f"⏱ Tiempo de respuestas ChatGPT: {chatgpt_time:.2f} segundos")
+
 
         ##analisis = respuesta.choices[0].message.content.strip()
         ##datos = json.loads(analisis)
@@ -573,7 +660,7 @@ def analizar_caso_psicologico():
                     with open(ciudad_archivo, "r", encoding="utf-8") as f:
                         psicologos = json.load(f)
 
-                return jsonify({**datos, "psicologos": psicologos, "comentarios_analizados": comentarios_analizados})
+                return jsonify({**datos, "psicologos": psicologos, "comentarios_analizados": comentarios_analizados, "publicaciones_analizadas": publicaciones_analizadas})
 
             except json.JSONDecodeError as e:
                 return jsonify({"error": f"JSON inválido: {str(e)}", "respuesta_bruta": analisis}), 500
